@@ -98,7 +98,7 @@ void sendMessage()
     delay(1000);
     SerialGSM.print("AT+CMGF=1\r");
     delay(1000);
-    SerialGSM.print("AT+CMGS=\"082113910596\"\r"); // No HP Tujuan
+    SerialGSM.print("AT+CMGS=\"082******\"\r"); // Phone number
     delay(1000);
     SerialGSM.print(message);
     delay(5000);
