@@ -16,11 +16,14 @@ void adjustTimeNow(int H, int M);
 
 // declare
 char message[50];
-float latitude = 0.1;
-float longitude = 0.1;
-float temp = 0.1;
+float latitude, longitude, temp;
 char Time[6];
 char stmp[7];
+
+const unsigned long intervalGPSRead = 10000;
+const unsigned long intervalGSMSend = 60000;
+unsigned long previousTimeGSM = 0;
+unsigned long previousTimeGPS = 0;
 
 void setup()
 {
@@ -32,11 +35,16 @@ void setup()
 
 void loop()
 {
-    temp = dht.readTemperature();
-    dtostrf(temp, 5, 2, stmp);
+    unsigned long currentTime = millis();
     getDataGps();
-    setMessage(latitude, longitude);
-    Serial.println(message);
+    if (currentTime - previousTimeGSM >= intervalGSMSend)
+    {
+        temp = dht.readTemperature();
+        dtostrf(temp, 5, 2, stmp);
+        setMessage(latitude, longitude);
+        Serial.println(message);
+        previousTimeGSM = currentTime;
+    }
 }
 
 void getDataGps()
@@ -45,7 +53,7 @@ void getDataGps()
     while (SerialGPS.available() > 0)
     {
         Gps.encode(SerialGPS.read());
-        if (Gps.location.isValid())
+        if (Gps.location.isValid() && Gps.location.isUpdated())
         {
             latitude = Gps.location.lat();
             longitude = Gps.location.lng();
