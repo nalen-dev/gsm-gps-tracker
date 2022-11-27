@@ -6,10 +6,12 @@
 
 // initialize pin
 DHT dht(5, DHTTYPE);
-static const int GPSRx = 3, GPSTx = 4;
+static const int GPSRx = 3, GPSTx = 4; // Rx Arduino --> Tx GPS && Tx Arduino --> Rx GPS
+static const int GSMRx = 6, GSMTx = 7; // Rx Arduino --> Tx GSM && Tx Arduino --> Rx GSM
 
 // setup
 SoftwareSerial SerialGPS(GPSRx, GPSTx);
+SoftwareSerial SerialGSM(GSMRx, GSMTx);
 TinyGPSPlus Gps;
 
 void adjustTimeNow(int H, int M);
@@ -21,7 +23,7 @@ char Time[6];
 char stmp[7];
 
 const unsigned long intervalGPSRead = 10000;
-const unsigned long intervalGSMSend = 60000;
+const unsigned long intervalGSMSend = 300000;
 unsigned long previousTimeGSM = 0;
 unsigned long previousTimeGPS = 0;
 
@@ -29,7 +31,8 @@ void setup()
 {
     Serial.begin(9600);
     SerialGPS.begin(9600);
-    Serial.println(F("Mulai!!"));
+    SerialGSM.begin(9600);
+    Serial.println(F("START INTEGRATION TEST!!"));
     dht.begin();
 }
 
@@ -42,7 +45,7 @@ void loop()
         temp = dht.readTemperature();
         dtostrf(temp, 5, 2, stmp);
         setMessage(latitude, longitude);
-        Serial.println(message);
+        sendMessage();
         previousTimeGSM = currentTime;
     }
 }
@@ -83,4 +86,23 @@ void setMessage(float latitude, float longitude)
     dtostrf(longitude, 11, 6, slng);
     sprintf(message, "Time: %s\nTemp: %s C\nLat: %s\nLong: %s", Time, stmp, slat, slng);
     return;
+}
+
+void sendMessage()
+{
+    Serial.println(F("Sending message ..."));
+    Serial.println(message);
+    SerialGSM.listen();
+    delay(5000);
+    SerialGSM.print("\r");
+    delay(1000);
+    SerialGSM.print("AT+CMGF=1\r");
+    delay(1000);
+    SerialGSM.print("AT+CMGS=\"082113910596\"\r"); // No HP Tujuan
+    delay(1000);
+    SerialGSM.print(message);
+    delay(5000);
+    SerialGSM.write(0x1A);
+    Serial.println(F("Finish"));
+    Serial.println(F("--------------"));
 }
